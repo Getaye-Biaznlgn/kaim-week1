@@ -48,3 +48,33 @@ class QuantitativeAnalysis:
         plt.grid(True)
         plt.tight_layout()
         plt.show()
+
+    def count_articles_per_publisher(self, top_n=10):
+        """
+        Counts the number of articles per publisher and optionally plots the top N.
+
+        Args:
+            top_n (int): Number of top publishers to display.
+
+        Returns:
+            pd.Series: Publisher counts sorted descending.
+        """
+        # Clean publisher names
+        self.df['publisher'] = self.df['publisher'].astype(str).str.strip().str.lower()
+
+        # Count occurrences
+        publisher_counts = self.df['publisher'].value_counts()
+
+        print(f"[INFO] Top {top_n} publishers by article count:\n", publisher_counts.head(top_n))
+        
+        sns.barplot(x=publisher_counts.head(top_n).values,
+                    y=publisher_counts.head(top_n).index,
+                    palette="mako")
+        plt.title(f"Top {top_n} Publishers by Article Count")
+        plt.xlabel("Number of Articles")
+        plt.ylabel("Publisher")
+        plt.grid(True, axis='x', linestyle='--', alpha=0.6)
+        plt.tight_layout()
+        plt.show()
+
+        return publisher_counts
