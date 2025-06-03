@@ -178,3 +178,99 @@ class QuantitativeAnalysis:
             topics.append(top_words)
 
         return topics
+    
+    def publication_frequency_over_time(self, freq='D'):
+        """
+        Analyze how the number of published articles varies over time.
+
+        Parameters:
+        - freq (str): Time frequency ('D' = daily, 'W' = weekly, 'M' = monthly).
+
+        Returns:
+        - pandas.Series: article count time series.
+        """
+        self.df['date'] = pd.to_datetime(self.df['date'], errors='coerce', utc=True)
+        self.df = self.df.dropna(subset=['date'])
+
+        pub_trend = self.df.set_index('date').resample(freq).size()
+
+        pub_trend.plot(figsize=(12, 4), color='teal')
+        plt.title(f"Publication Frequency ({freq})")
+        plt.xlabel("Date")
+        plt.ylabel("Number of Articles")
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
+
+        return pub_trend
+    
+    def publication_hour_distribution(self):
+        """
+        Analyze what time of day articles are most frequently published.
+
+        Returns:
+        - pandas.Series: article counts by hour.
+        """
+        self.df['date'] = pd.to_datetime(self.df['date'], errors='coerce', utc=True)
+        self.df = self.df.dropna(subset=['date'])
+
+        self.df['hour'] = self.df['date'].dt.hour
+        hour_counts = self.df['hour'].value_counts().sort_index()
+
+        sns.barplot(x=hour_counts.index, y=hour_counts.values, palette="viridis")
+        plt.title("News Article Publication by Hour (UTC)")
+        plt.xlabel("Hour of Day")
+        plt.ylabel("Number of Articles")
+        plt.xticks(range(0, 24))
+        plt.tight_layout()
+        plt.show()
+
+        return hour_counts
+
+    def top_publishers(self, top_n=10):
+        """
+        Show top N publishers by article count.
+
+        Parameters:
+        - top_n (int): How many top publishers to show.
+
+        Returns:
+        - pandas.Series: Publisher name → article count
+        """
+        publisher_counts = self.df['publisher'].value_counts()
+
+        sns.barplot(
+            y=publisher_counts.head(top_n).index,
+            x=publisher_counts.head(top_n).values,
+            palette="deep"
+        )
+        plt.title(f"Top {top_n} Publishers")
+        plt.xlabel("Article Count")
+        plt.ylabel("Publisher")
+        plt.tight_layout()
+        plt.show()
+
+        return publisher_counts
+
+    def analyze_publisher_domains(self):
+        """
+        Extract domains from email-style publisher names and analyze frequency.
+
+        Returns:
+        - pandas.Series: Domain → article count
+        """
+        self.df['domain'] = self.df['publisher'].str.extract(r'@([a-zA-Z0-9.-]+)')
+        domain_counts = self.df['domain'].value_counts().dropna()
+    
+        sns.barplot(
+            y=domain_counts.head(10).index,
+            x=domain_counts.head(10).values,
+            palette="muted"
+        )
+        plt.title("Top Publisher Domains")
+        plt.xlabel("Article Count")
+        plt.ylabel("Email Domain")
+        plt.tight_layout()
+        plt.show()
+
+        return domain_counts
