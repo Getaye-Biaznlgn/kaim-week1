@@ -78,3 +78,35 @@ class QuantitativeAnalysis:
         plt.show()
 
         return publisher_counts
+    
+    def analyze_publication_trends(self, frequency="D", plot=True):
+        """
+        Analyze article publication trends over time.
+
+        Parameters:
+        - frequency (str): Time aggregation level ('D' for day, 'W' for week, 'M' for month).
+        - plot (bool): Whether to plot the publication frequency.
+
+        Returns:
+        - pandas.Series with counts indexed by date.
+        """
+        if 'date' not in self.df.columns:
+            raise ValueError("'date' column not found in the dataset.")
+
+        # Convert to datetime if not already
+        # self.df['date'] = pd.to_datetime(self.df['date'], utc=True)
+        self.df['date'] = pd.to_datetime(self.df['date'], format='mixed', utc=True, errors='coerce')
+
+        # Group by date
+        trend = self.df.set_index('date').resample(frequency).size()
+
+        if plot:
+            trend.plot(figsize=(12, 5))
+            plt.title(f"Publication Frequency Over Time ({frequency})")
+            plt.xlabel("Date")
+            plt.ylabel("Number of Articles")
+            plt.grid(True)
+            plt.tight_layout()
+            plt.show()
+
+        return trend
