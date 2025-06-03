@@ -1,6 +1,12 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.decomposition import LatentDirichletAllocation
+from nltk.corpus import stopwords
+import nltk
+
+nltk.download('stopwords')
 
 class QuantitativeAnalysis:
     def __init__ (self, dataframe: pd.DataFrame):
@@ -110,3 +116,65 @@ class QuantitativeAnalysis:
             plt.show()
 
         return trend
+    
+    def extract_keywords_tfidf(self, top_n=20):
+        """
+        Extract top keywords using TF-IDF from the headline column.
+
+        Parameters:
+        - top_n (int): number of top keywords to return.
+
+        Returns:
+        - List of top keywords.
+        """
+        stop_words = stopwords.words('english')
+
+        tfidf = TfidfVectorizer(
+            stop_words=stop_words,
+            max_features=top_n,
+            lowercase=True,
+            token_pattern=r'\b[a-zA-Z]{3,}\b'
+        )
+
+        self.df['headline'] = self.df['headline'].astype(str)
+        X = tfidf.fit_transform(self.df['headline'])
+
+        top_keywords = tfidf.get_feature_names_out()
+        print(f"[INFO] Top {top_n} TF-IDF Keywords:\n", top_keywords)
+        return top_keywords.tolist()
+
+
+    def extract_topics_lda(self, n_topics=5, n_words=5):
+        """
+        Perform LDA topic modeling on the headlines.
+
+        Parameters:
+        - n_topics (int): number of topics to extract.
+        - n_words (int): number of top words per topic.
+
+        Returns:
+        - List of topics (each topic is a list of words).
+        """
+        stop_words = stopwords.words('english')
+
+        vectorizer = CountVectorizer(
+            stop_words=stop_words,
+            lowercase=True,
+            token_pattern=r'\b[a-zA-Z]{3,}\b'
+        )
+
+        self.df['headline'] = self.df['headline'].astype(str)
+        X = vectorizer.fit_transform(self.df['headline'])
+
+        lda = LatentDirichletAllocation(n_components=n_topics, random_state=42)
+        lda.fit(X)
+
+        words = vectorizer.get_feature_names_out()
+        topics = []
+
+        for idx, topic in enumerate(lda.components_):
+            top_words = [words[i] for i in topic.argsort()[-n_words:]]
+            print(f"Topic {idx + 1}: {top_words}")
+            topics.append(top_words)
+
+        return topics
